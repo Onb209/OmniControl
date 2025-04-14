@@ -478,52 +478,110 @@ if __name__ == "__main__":
           (len(source_list), frame_num, frame_num / 20 / 60))
 '''
 
-if __name__ == "__main__":
-    example_id = "03950_gt"
-    # Lower legs
-    l_idx1, l_idx2 = 17, 18
-    # Right/Left foot
-    fid_r, fid_l = [14, 15], [19, 20]
-    # Face direction, r_hip, l_hip, sdr_r, sdr_l
-    face_joint_indx = [11, 16, 5, 8]
-    # l_hip, r_hip
-    r_hip, l_hip = 11, 16
-    joints_num = 21
-    # ds_num = 8
-    data_dir = '../dataset/kit_mocap_dataset/joints/'
-    save_dir1 = '../dataset/kit_mocap_dataset/new_joints/'
-    save_dir2 = '../dataset/kit_mocap_dataset/new_joint_vecs/'
+# if __name__ == "__main__":
+#     example_id = "03950_gt"
+#     # Lower legs
+#     l_idx1, l_idx2 = 17, 18
+#     # Right/Left foot
+#     fid_r, fid_l = [14, 15], [19, 20]
+#     # Face direction, r_hip, l_hip, sdr_r, sdr_l
+#     face_joint_indx = [11, 16, 5, 8]
+#     # l_hip, r_hip
+#     r_hip, l_hip = 11, 16
+#     joints_num = 21
+#     # ds_num = 8
+#     data_dir = '../dataset/kit_mocap_dataset/joints/'
+#     save_dir1 = '../dataset/kit_mocap_dataset/new_joints/'
+#     save_dir2 = '../dataset/kit_mocap_dataset/new_joint_vecs/'
 
-    n_raw_offsets = torch.from_numpy(kit_raw_offsets)
-    kinematic_chain = kit_kinematic_chain
+#     n_raw_offsets = torch.from_numpy(kit_raw_offsets)
+#     kinematic_chain = kit_kinematic_chain
+
+#     '''Get offsets of target skeleton'''
+#     example_data = np.load(os.path.join(data_dir, example_id + '.npy'))
+#     example_data = example_data.reshape(len(example_data), -1, 3)
+#     example_data = torch.from_numpy(example_data)
+#     tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
+#     # (joints_num, 3)
+#     tgt_offsets = tgt_skel.get_offsets_joints(example_data[0])
+#     # print(tgt_offsets)
+
+#     source_list = os.listdir(data_dir)
+#     frame_num = 0
+#     '''Read source dataset'''
+#     for source_file in tqdm(source_list):
+#         source_data = np.load(os.path.join(data_dir, source_file))[:, :joints_num]
+#         try:
+#             name = ''.join(source_file[:-7].split('_')) + '.npy'
+#             data, ground_positions, positions, l_velocity = process_file(source_data, 0.05)
+#             rec_ric_data = recover_from_ric(torch.from_numpy(data).unsqueeze(0).float(), joints_num)
+#             if np.isnan(rec_ric_data.numpy()).any():
+#                 print(source_file)
+#                 continue
+#             np.save(pjoin(save_dir1, name), rec_ric_data.squeeze().numpy())
+#             np.save(pjoin(save_dir2, name), data)
+#             frame_num += data.shape[0]
+#         except Exception as e:
+#             print(source_file)
+#             print(e)
+
+#     print('Total clips: %d, Frames: %d, Duration: %fm' %
+#           (len(source_list), frame_num, frame_num / 12.5 / 60))
+
+if __name__ == "__main__":
+    example_id = "000021"
+    source_name = 'userstudy_0'
+
+    # Lower legs
+    l_idx1, l_idx2 = 5,8
+    # Right/Left foot
+    fid_r, fid_l = [8, 11], [7, 10]
+    # Face direction, r_hip, l_hip, sdr_r, sdr_l
+    face_joint_indx = [2,1,17,16]
+    # l_hip, r_hip
+    r_hip, l_hip = 2, 1
+    joints_num = 22
+    # ds_num = 8
+    example_dir = 'dataset/joints/'
+    source_dir = 'dataset/'
+
+    save_dir1 = 'dataset/new_joints/'
+    save_dir2 = 'dataset/new_joints_vec/'
+
+    if not os.path.exists(save_dir1):
+        os.makedirs(save_dir1)
+    if not os.path.exists(save_dir2):
+        os.makedirs(save_dir2)
+    
+
+    n_raw_offsets = torch.from_numpy(t2m_raw_offsets)
+    kinematic_chain = t2m_kinematic_chain
 
     '''Get offsets of target skeleton'''
-    example_data = np.load(os.path.join(data_dir, example_id + '.npy'))
-    example_data = example_data.reshape(len(example_data), -1, 3)
-    example_data = torch.from_numpy(example_data)
+    example_data = np.load(os.path.join(example_dir, example_id + '.npy'), allow_pickle=True)[None][0]
+    example_motion = example_data
+    example_motion = example_motion.squeeze().reshape(len(example_motion), -1, 3)
+    example_motion = torch.from_numpy(example_motion)
     tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, 'cpu')
     # (joints_num, 3)
-    tgt_offsets = tgt_skel.get_offsets_joints(example_data[0])
-    # print(tgt_offsets)
-
-    source_list = os.listdir(data_dir)
+    tgt_offsets = tgt_skel.get_offsets_joints(example_motion[0])
+    
     frame_num = 0
     '''Read source dataset'''
-    for source_file in tqdm(source_list):
-        source_data = np.load(os.path.join(data_dir, source_file))[:, :joints_num]
-        try:
-            name = ''.join(source_file[:-7].split('_')) + '.npy'
-            data, ground_positions, positions, l_velocity = process_file(source_data, 0.05)
-            rec_ric_data = recover_from_ric(torch.from_numpy(data).unsqueeze(0).float(), joints_num)
-            if np.isnan(rec_ric_data.numpy()).any():
-                print(source_file)
-                continue
-            np.save(pjoin(save_dir1, name), rec_ric_data.squeeze().numpy())
-            np.save(pjoin(save_dir2, name), data)
-            frame_num += data.shape[0]
-        except Exception as e:
-            print(source_file)
-            print(e)
-
-    print('Total clips: %d, Frames: %d, Duration: %fm' %
-          (len(source_list), frame_num, frame_num / 12.5 / 60))
+    # for source_file in tqdm(source_list):
+        # source_data = np.load(os.path.join(data_dir, source_file))[:, :joints_num]
+    source_data = np.load(os.path.join(source_dir, source_name + '.npy'), allow_pickle=True)[None][0]
+    source_motion = source_data['motion'].squeeze()
+    
+    name = source_name + '_converted.npy'
+    data, ground_positions, positions, l_velocity = process_file(source_motion, 0.05)
+    rec_ric_data = recover_from_ric(torch.from_numpy(data).unsqueeze(0).float(), joints_num)
+    if np.isnan(rec_ric_data.numpy()).any():
+        print(name)
+    else:
+        np.save(pjoin(save_dir1, name), rec_ric_data.squeeze().numpy())
+        np.save(pjoin(save_dir2, name), data)
+        frame_num += data.shape[0]
+    
+    print('Frames: %d, Duration: %fm' %
+          (frame_num, frame_num / 20 / 60))

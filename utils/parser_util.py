@@ -211,6 +211,7 @@ def generate_args():
     add_base_options(parser)
     add_sampling_options(parser)
     add_generate_options(parser)
+    add_edit_options(parser)
     args = parse_and_load_from_model(parser)
 
     return args
